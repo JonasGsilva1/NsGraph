@@ -36,7 +36,11 @@ function LoginPage() {
       });
 
       if (error) {
-        toast.error(error.message);
+        if (error.message === 'Invalid login credentials') {
+          toast.error('E-mail ou senha incorretos.');
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
 
