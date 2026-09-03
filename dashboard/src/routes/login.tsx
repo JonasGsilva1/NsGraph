@@ -53,31 +53,6 @@ function LoginPage() {
     }
   };
 
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      toast.error('Preencha o e-mail e senha para criar a conta.');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
-
-      if (error) {
-        toast.error(`Erro ao criar conta: ${error.message}`);
-        return;
-      }
-      
-      toast.success('Conta criada com sucesso! Você já deve estar logado.');
-      navigate({ to: '/' });
-    } catch (error) {
-      toast.error('Ocorreu um erro inesperado.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (authLoading) {
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
@@ -120,18 +95,9 @@ function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-3">
+          <CardFooter>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading ? 'Entrando...' : 'Entrar'}
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full border-dashed" 
-              disabled={isLoading}
-              onClick={handleSignUp}
-            >
-              Forçar Criação de Conta (Teste)
             </Button>
           </CardFooter>
         </form>
