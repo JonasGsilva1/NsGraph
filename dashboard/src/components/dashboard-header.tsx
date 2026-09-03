@@ -87,7 +87,6 @@ export function DashboardHeader({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Painel de Vendas</h1>
         </div>
-        </div>
         <div>
           <p className="text-sm text-muted-foreground mt-1">
             {formatDateRange(range)}
