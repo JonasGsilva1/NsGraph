@@ -25,7 +25,7 @@ serve(async (req) => {
     if (!path || !companyId) {
       return new Response(JSON.stringify({ error: 'path e companyId são obrigatórios' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 200,
       })
     }
 
@@ -41,7 +41,7 @@ serve(async (req) => {
     if (dbError || !companyData?.api_token) {
       return new Response(JSON.stringify({ error: 'Empresa não encontrada ou sem permissão de acesso.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
+        status: 200,
       })
     }
 
@@ -76,7 +76,7 @@ serve(async (req) => {
       const errText = await apiResponse.text()
       return new Response(JSON.stringify({ error: `Erro na API do ERP (${apiResponse.status}): ${errText}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: apiResponse.status,
+        status: 200,
       })
     }
 
@@ -90,7 +90,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status: 200,
     })
   }
 })
