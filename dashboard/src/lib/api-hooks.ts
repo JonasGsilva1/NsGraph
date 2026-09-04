@@ -267,7 +267,7 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
         setLoading(false);
       }
     }
-  }, [range, companyId]);
+  }, [range.from.getTime(), range.to.getTime(), companyId]);
 
   useEffect(() => {
     load();
