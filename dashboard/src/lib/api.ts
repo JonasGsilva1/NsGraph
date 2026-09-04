@@ -51,7 +51,7 @@ async function fetchWithRetry<T>(
   path: string,
   companyId: string,
   params?: Record<string, string | number | undefined>,
-  retries = 3
+  retries = 0
 ): Promise<T> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
