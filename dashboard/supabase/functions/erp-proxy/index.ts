@@ -57,11 +57,17 @@ serve(async (req) => {
       }
     }
 
+    // Limpa o token para evitar duplicação do prefixo "Authentication "
+    let safeToken = companyData.api_token.trim();
+    if (safeToken.toLowerCase().startsWith('authentication ')) {
+      safeToken = safeToken.substring(15).trim();
+    }
+
     // 3. Faz a requisição para a API Externa com o token criptografado/escondido
     const apiResponse = await fetch(targetUrl.toString(), {
       method: 'GET',
       headers: {
-        'Authorization': `Authentication ${companyData.api_token}`,
+        'Authorization': `Authentication ${safeToken}`,
         'Accept': 'application/json'
       }
     })

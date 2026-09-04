@@ -54,11 +54,21 @@ async function fetchWithRetry<T>(
   retries = 3
 ): Promise<T> {
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const { data, error } = await supabase.functions.invoke('erp-proxy', {
-      body: { path, companyId, params }
-    });
+    try {
+      const invokePromise = supabase.functions.invoke('erp-proxy', {
+        body: { path, companyId, params }
+      });
+      const timeoutPromise = new Promise<any>((_, reject) => {
+        setTimeout(() => {
+          const err = new Error('Timeout');
+          err.name = 'AbortError';
+          reject(err);
+        }, 15000);
+      });
 
-    if (error) {
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
+      if (error) {
       // O Supabase Functions wrapper lança erro se houver problemas de rede ou status 5xx
       // Vamos checar se é um Rate Limit (429) no corpo do erro, se possível, mas 
       // geralmente o status HTTP fica disponível no objeto de resposta ou temos que extrair.
@@ -75,7 +85,15 @@ async function fetchWithRetry<T>(
       throw new Error(`API error: ${data.error}`);
     }
 
-    return data as T;
+      return data as T;
+    } catch (fetchErr: any) {
+      if (fetchErr.name === 'AbortError') {
+        console.warn(`Request timeout (attempt ${attempt})`);
+        if (attempt === retries) throw new Error('API timeout excedido');
+        continue;
+      }
+      throw fetchErr;
+    }
   }
   throw new Error("Max retries exceeded");
 }
@@ -111,6 +129,8 @@ export async function fetchAllPages<T>(
 
     if (response.items && response.items.length > 0) {
       allItems.push(...response.items);
+    } else {
+      break; // Stop if no items are returned, even if hasNext is true
     }
 
     hasNext = response.hasNext;
