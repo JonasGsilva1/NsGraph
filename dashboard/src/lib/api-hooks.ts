@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  fetchDocumentos,
-  fetchMercadoriasVendidas,
-  fetchMercadoriaGrupos,
-  fetchFuncionarios,
+  // Cache (Supabase direto)
+  fetchCachedDocumentos,
+  fetchCachedGrupos,
+  fetchCachedFuncionarios,
+  fetchSyncStatus,
+  // Live API (fallback para > 2 meses)
+  fetchLiveDocumentos,
+  fetchLiveMercadoriasVendidas,
+  fetchLiveGrupos,
+  fetchLiveFuncionarios,
   clearRequestQueue,
   type DocumentoResponse,
   type MercadoriaVendidaResponse,
@@ -69,10 +75,27 @@ export interface DashboardData {
   sellerSales: SellerSales[];
 }
 
+// ------ Helpers ------
+
+const CACHE_WINDOW_MONTHS = 2;
+
+/**
+ * Determina se o período selecionado está dentro da janela de cache (2 meses).
+ * Se sim, podemos usar dados do Supabase (instantâneo).
+ * Se não, precisamos buscar da API ao vivo (com loading).
+ */
+function isWithinCacheWindow(range: DateRange): boolean {
+  const now = new Date();
+  const cacheLimit = new Date(now);
+  cacheLimit.setMonth(cacheLimit.getMonth() - CACHE_WINDOW_MONTHS);
+  cacheLimit.setHours(0, 0, 0, 0);
+  return range.from >= cacheLimit;
+}
+
 // ------ Static Data Cache ------
 
-let gruposCache: MercadoriaGrupoResponse[] | null = null;
-let funcionariosCache: FuncionarioResponse[] | null = null;
+let gruposCache: Map<string, MercadoriaGrupoResponse[]> = new Map();
+let funcionariosCache: Map<string, FuncionarioResponse[]> = new Map();
 
 // ------ Main Hook ------
 
@@ -80,6 +103,7 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<"cache" | "live" | null>(null);
   const abortRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -95,6 +119,9 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
       return;
     }
 
+    const useCache = isWithinCacheWindow(range);
+    setSource(useCache ? "cache" : "live");
+
     try {
       const fromStr = dateToISO(range.from);
       const toStr = dateToISO(range.to);
@@ -103,59 +130,94 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
       const prevToStr = dateToISO(prevRange.to);
       const modelos = config.modelos;
 
-      // Fetch static data (cached)
-      if (!gruposCache) {
-        gruposCache = await fetchMercadoriaGrupos(companyId);
-      }
-      if (!funcionariosCache) {
-        funcionariosCache = await fetchFuncionarios(companyId);
+      let currentDocs: DocumentoResponse[];
+      let prevDocs: DocumentoResponse[];
+      let allDocs: DocumentoResponse[] = [];
+      let prevAllDocs: DocumentoResponse[] = [];
+      let grupos: MercadoriaGrupoResponse[];
+      let funcionarios: FuncionarioResponse[];
+
+      if (useCache) {
+        // ===== MODO CACHE (≤ 2 meses) =====
+        // Busca instantânea direto do Supabase
+        console.log("[dashboard] Usando dados do cache (Supabase)");
+
+        const [
+          cachedCurrentDocs,
+          cachedPrevDocs,
+          cachedGrupos,
+          cachedFuncionarios,
+        ] = await Promise.all([
+          fetchCachedDocumentos(companyId, fromStr, toStr, undefined, "E"),
+          fetchCachedDocumentos(companyId, prevFromStr, prevToStr, undefined, "E"),
+          gruposCache.get(companyId) 
+            ? Promise.resolve(gruposCache.get(companyId)!)
+            : fetchCachedGrupos(companyId),
+          funcionariosCache.get(companyId)
+            ? Promise.resolve(funcionariosCache.get(companyId)!)
+            : fetchCachedFuncionarios(companyId),
+        ]);
+
+        currentDocs = cachedCurrentDocs;
+        prevDocs = cachedPrevDocs;
+        grupos = cachedGrupos;
+        funcionarios = cachedFuncionarios;
+
+        // Se o usuário quer ver a taxa de conversão, buscar docs de todos os status
+        if (config.showConversionRate) {
+          const [cachedAll, cachedPrevAll] = await Promise.all([
+            fetchCachedDocumentos(companyId, fromStr, toStr),
+            fetchCachedDocumentos(companyId, prevFromStr, prevToStr),
+          ]);
+          allDocs = cachedAll;
+          prevAllDocs = cachedPrevAll;
+        }
+      } else {
+        // ===== MODO AO VIVO (> 2 meses) =====
+        // Busca via API do ERP (mais lento, respeita rate limit)
+        console.log("[dashboard] Usando API ao vivo (período > 2 meses)");
+
+        // Fetch documentos
+        const docPromises = modelos.map((m) =>
+          fetchLiveDocumentos(fromStr, toStr, companyId, m, "E")
+        );
+        const prevDocPromises = modelos.map((m) =>
+          fetchLiveDocumentos(prevFromStr, prevToStr, companyId, m, "E")
+        );
+        const allDocPromises = config.showConversionRate
+          ? modelos.map((m) => fetchLiveDocumentos(fromStr, toStr, companyId, m))
+          : [];
+        const prevAllDocPromises = config.showConversionRate
+          ? modelos.map((m) =>
+              fetchLiveDocumentos(prevFromStr, prevToStr, companyId, m)
+            )
+          : [];
+
+        const [docResults, prevDocResults, allDocResults, prevAllDocResults] =
+          await Promise.all([
+            Promise.all(docPromises),
+            Promise.all(prevDocPromises),
+            Promise.all(allDocPromises),
+            Promise.all(prevAllDocPromises),
+          ]);
+
+        currentDocs = docResults.flat();
+        prevDocs = prevDocResults.flat();
+        allDocs = allDocResults.flat();
+        prevAllDocs = prevAllDocResults.flat();
+
+        // Fetch static data
+        grupos = gruposCache.get(companyId) || (await fetchLiveGrupos(companyId));
+        funcionarios =
+          funcionariosCache.get(companyId) || (await fetchLiveFuncionarios(companyId));
       }
 
       if (abortRef.current) return;
 
-      // Fetch current period documents (emitted, sales)
-      const docPromises = modelos.map((m) =>
-        fetchDocumentos(fromStr, toStr, companyId, m, "E")
-      );
-      // Fetch all status docs for conversion rate
-      const allDocPromises = config.showConversionRate
-        ? modelos.map((m) => fetchDocumentos(fromStr, toStr, companyId, m))
-        : [];
-
-      // Fetch previous period documents
-      const prevDocPromises = modelos.map((m) =>
-        fetchDocumentos(prevFromStr, prevToStr, companyId, m, "E")
-      );
-      const prevAllDocPromises = config.showConversionRate
-        ? modelos.map((m) => fetchDocumentos(prevFromStr, prevToStr, companyId, m))
-        : [];
-
-      // Fetch mercadorias vendidas for current period
-      const mercsPromises = modelos
-        .filter((m) => m !== "PV")
-        .map((m) => fetchMercadoriasVendidas(fromStr, toStr, m, companyId));
-
-      const [
-        docResults,
-        allDocResults,
-        prevDocResults,
-        prevAllDocResults,
-        mercsResults,
-      ] = await Promise.all([
-        Promise.all(docPromises),
-        Promise.all(allDocPromises),
-        Promise.all(prevDocPromises),
-        Promise.all(prevAllDocPromises),
-        Promise.all(mercsPromises),
-      ]);
-
-      if (abortRef.current) return;
-
-      const currentDocs = docResults.flat();
-      const allDocs = allDocResults.flat();
-      const prevDocs = prevDocResults.flat();
-      const prevAllDocs = prevAllDocResults.flat();
-      const mercsVendidas = mercsResults.flat();
+      // Cache static data
+      if (!gruposCache.has(companyId)) gruposCache.set(companyId, grupos);
+      if (!funcionariosCache.has(companyId))
+        funcionariosCache.set(companyId, funcionarios);
 
       // Build KPI data
       const kpi = buildKpiData(
@@ -176,14 +238,14 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
         prevRange
       );
 
-      // Build top products
-      const topProducts = buildTopProducts(mercsVendidas, currentDocs);
+      // Build top products from document items
+      const topProducts = buildTopProducts(currentDocs);
 
       // Build category sales
-      const categorySales = buildCategorySales(currentDocs, gruposCache!);
+      const categorySales = buildCategorySales(currentDocs, grupos);
 
       // Build seller sales
-      const sellerSales = buildSellerSales(currentDocs, funcionariosCache!);
+      const sellerSales = buildSellerSales(currentDocs, funcionarios);
 
       if (abortRef.current) return;
 
@@ -214,7 +276,7 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
     };
   }, [load]);
 
-  return { data, loading, error, reload: load };
+  return { data, loading, error, source, reload: load };
 }
 
 // ------ Builders ------
@@ -251,7 +313,6 @@ function buildKpiData(
 
   // Sparkline data
   const buckets = getTimeBuckets(range);
-  const prevBuckets = getTimeBuckets(prevRange);
 
   const revenueByDay = buildSparkline(currentDocs, buckets);
   const ordersByDay = buildSparklineCount(currentDocs, buckets);
@@ -392,29 +453,11 @@ function buildRevenueTimeline(
 }
 
 function buildTopProducts(
-  mercsVendidas: MercadoriaVendidaResponse[],
   currentDocs: DocumentoResponse[]
 ): TopProduct[] {
-  // Merge from mercadorias-vendidas endpoint + document items
   const productMap = new Map<string, { name: string; revenue: number }>();
 
-  // From mercadorias vendidas endpoint (already aggregated)
-  for (const m of mercsVendidas) {
-    const key = m.descricao || `Produto #${m.idMercadoriaVariacao}`;
-    const existing = productMap.get(key);
-    if (existing) {
-      existing.revenue += m.valTotalLiquido || 0;
-    } else {
-      productMap.set(key, {
-        name: key,
-        revenue: m.valTotalLiquido || 0,
-      });
-    }
-  }
-
-  // Also include PV items from documents
   for (const doc of currentDocs) {
-    if (doc.modelo !== "PV") continue;
     if (!doc.mercadoriasLista) continue;
     for (const item of doc.mercadoriasLista) {
       const m = item.documentoMercadoria;
@@ -455,7 +498,10 @@ function buildCategorySales(
       const m = item.documentoMercadoria;
       const grupoId = m.idGrupo || 0;
       if (grupoId === 0) continue;
-      salesMap.set(grupoId, (salesMap.get(grupoId) || 0) + (m.valTotalLiquido || 0));
+      salesMap.set(
+        grupoId,
+        (salesMap.get(grupoId) || 0) + (m.valTotalLiquido || 0)
+      );
     }
   }
 
