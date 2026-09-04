@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import {
   CalendarIcon,
   Settings,
+  LogOut,
   X,
 } from "lucide-react";
 
@@ -18,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { type DateRange, formatDateRange, type Preset } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SettingsDialog } from "./settings-dialog";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 interface DashboardHeaderProps {
@@ -41,6 +43,7 @@ export function DashboardHeader({
   onCompanyChange,
   onAdminPanelClick,
 }: DashboardHeaderProps) {
+  const { signOut } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [customRange, setCustomRange] = useState<{
     from: Date | undefined;
@@ -117,6 +120,14 @@ export function DashboardHeader({
         )}
 
         <div className="period-buttons bg-card border border-border p-1 rounded-lg">
+          <Button
+            variant={preset === "today" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => handlePresetClick("today")}
+            className="rounded-md px-3 h-8 text-xs font-medium"
+          >
+            Hoje
+          </Button>
           <Button
             variant={preset === "7d" ? "default" : "ghost"}
             size="sm"
@@ -203,8 +214,18 @@ export function DashboardHeader({
           size="icon"
           className="h-10 w-10 shrink-0"
           onClick={() => setIsSettingsOpen(true)}
+          title="Configurações"
         >
           <Settings className="w-4 h-4 text-muted-foreground" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+          onClick={signOut}
+          title="Sair"
+        >
+          <LogOut className="w-4 h-4" />
         </Button>
       </div>
 

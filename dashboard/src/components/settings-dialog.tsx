@@ -50,24 +50,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Token de API
-            </label>
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={localConfig.apiToken}
-              onChange={(e) =>
-                setLocalConfig({ ...localConfig, apiToken: e.target.value })
-              }
-              placeholder="Authentication {token}"
-            />
-            <p className="text-[0.8rem] text-muted-foreground">
-              Deixe em branco para usar a variável de ambiente VITE_API_TOKEN.
-            </p>
-          </div>
-
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Taxa de Conversão</label>

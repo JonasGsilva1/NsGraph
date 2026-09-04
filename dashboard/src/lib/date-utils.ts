@@ -18,7 +18,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type Preset = "7d" | "30d" | "90d" | "1y" | "custom";
+export type Preset = "today" | "7d" | "30d" | "90d" | "1y" | "custom";
 
 export interface DateRange {
   from: Date;
@@ -30,6 +30,8 @@ export function getPresetRange(preset: Preset): DateRange {
   const to = endOfDay(now);
 
   switch (preset) {
+    case "today":
+      return { from: startOfDay(now), to };
     case "7d":
       return { from: startOfDay(subDays(now, 6)), to };
     case "30d":
