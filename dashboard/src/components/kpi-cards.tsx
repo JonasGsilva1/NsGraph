@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
@@ -10,16 +9,30 @@ import { formatCurrency, formatPercent, formatNumber } from "@/lib/date-utils";
 interface KpiCardsProps {
   data: KpiData | undefined;
   loading: boolean;
+  showOrders?: boolean;
+  showConversionRate?: boolean;
 }
 
-export function KpiCards({ data, loading }: KpiCardsProps) {
+export function KpiCards({
+  data,
+  loading,
+  showOrders = true,
+  showConversionRate = false,
+}: KpiCardsProps) {
+  // Count how many cards to show
+  const cardCount = 2 + (showOrders ? 1 : 0) + (showConversionRate ? 1 : 0);
+
   if (loading || !data) {
     return (
-      <div className="kpi-grid mb-6">
-        <Skeleton className="h-[120px] w-full" />
-        <Skeleton className="h-[120px] w-full" />
-        <Skeleton className="h-[120px] w-full" />
-        <Skeleton className="h-[120px] w-full" />
+      <div
+        className="kpi-grid mb-6"
+        style={{
+          gridTemplateColumns: `repeat(${cardCount}, 1fr)`,
+        }}
+      >
+        {Array.from({ length: cardCount }).map((_, i) => (
+          <Skeleton key={i} className="h-[120px] w-full" />
+        ))}
       </div>
     );
   }
@@ -36,35 +49,44 @@ export function KpiCards({ data, loading }: KpiCardsProps) {
   );
 
   return (
-    <div className="kpi-grid mb-6">
+    <div
+      className="kpi-grid mb-6"
+      style={{
+        gridTemplateColumns: `repeat(${cardCount}, 1fr)`,
+      }}
+    >
       <KpiCard
         title="Faturamento"
         value={formatCurrency(data.revenue)}
         change={revenueChange}
         chartData={data.revenueByDay}
-        color="hsl(160 84% 39%)" // primary
+        color="hsl(160 84% 39%)"
       />
-      <KpiCard
-        title="Pedidos"
-        value={formatNumber(data.orders)}
-        change={ordersChange}
-        chartData={data.ordersByDay}
-        color="hsl(200 80% 55%)" // chart-2
-      />
+      {showOrders && (
+        <KpiCard
+          title="Pedidos"
+          value={formatNumber(data.orders)}
+          change={ordersChange}
+          chartData={data.ordersByDay}
+          color="hsl(200 80% 55%)"
+        />
+      )}
       <KpiCard
         title="Ticket Médio"
         value={formatCurrency(data.averageTicket)}
         change={ticketChange}
         chartData={data.ticketByDay}
-        color="hsl(40 90% 60%)" // chart-4
+        color="hsl(40 90% 60%)"
       />
-      <KpiCard
-        title="Conversão"
-        value={formatPercent(data.conversionRate)}
-        change={convChange}
-        chartData={data.conversionByDay}
-        color="hsl(340 75% 55%)" // chart-5
-      />
+      {showConversionRate && (
+        <KpiCard
+          title="Conversão"
+          value={formatPercent(data.conversionRate)}
+          change={convChange}
+          chartData={data.conversionByDay}
+          color="hsl(340 75% 55%)"
+        />
+      )}
     </div>
   );
 }
@@ -123,9 +145,18 @@ function KpiCard({ title, value, change, chartData, color }: KpiCardProps) {
 
         <div className="h-10 w-[calc(100%+2.5rem)] -mx-5 -mb-5 opacity-60">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={chartData}
+              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+            >
               <defs>
-                <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient
+                  id={`gradient-${title}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
                   <stop offset="5%" stopColor={color} stopOpacity={0.4} />
                   <stop offset="95%" stopColor={color} stopOpacity={0} />
                 </linearGradient>

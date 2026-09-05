@@ -45,11 +45,27 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         <DialogHeader>
           <DialogTitle>Configurações do Painel</DialogTitle>
           <DialogDescription>
-            Ajuste a integração com o Meu ERP Online e preferências de exibição.
+            Ajuste as preferências de exibição do dashboard.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium">Exibir Pedidos</label>
+              <p className="text-[0.8rem] text-muted-foreground">
+                Mostrar o card de quantidade de pedidos e sparkline no
+                dashboard.
+              </p>
+            </div>
+            <Switch
+              checked={localConfig.showOrders}
+              onCheckedChange={(checked) =>
+                setLocalConfig({ ...localConfig, showOrders: checked })
+              }
+            />
+          </div>
+
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Taxa de Conversão</label>

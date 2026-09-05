@@ -12,11 +12,14 @@ import { RevenueChart } from "@/components/revenue-chart";
 import { TopProductsChart } from "@/components/top-products-chart";
 import { CategoryChart } from "@/components/category-chart";
 import { SellerChart } from "@/components/seller-chart";
+import { PdvChart } from "@/components/pdv-chart";
+import { PaymentChart } from "@/components/payment-chart";
 
 import { useDashboardData } from "@/lib/api-hooks";
 import { getPresetRange, type Preset } from "@/lib/date-utils";
+import { getConfig } from "@/lib/config";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/")({\
   component: Dashboard,
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -36,6 +39,7 @@ function Dashboard() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { user, profile, isLoading: authLoading } = useAuth();
+  const config = getConfig();
   
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
@@ -125,7 +129,12 @@ function Dashboard() {
         </div>
       ) : (
         <>
-          <KpiCards data={data?.kpi} loading={loading} />
+          <KpiCards
+            data={data?.kpi}
+            loading={loading}
+            showOrders={config.showOrders}
+            showConversionRate={config.showConversionRate}
+          />
 
           {!loading && data && (
             <div className="flex flex-col gap-6 animate-fade-in-delay-1">
@@ -136,6 +145,11 @@ function Dashboard() {
                 <CategoryChart data={data.categorySales} />
                 <SellerChart data={data.sellerSales} />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <PdvChart data={data.pdvSales} />
+                <PaymentChart data={data.paymentSales} />
+              </div>
             </div>
           )}
 
@@ -144,6 +158,10 @@ function Dashboard() {
               <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
               <div className="dashboard-grid">
                 <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
+                <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
+                <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
                 <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
               </div>

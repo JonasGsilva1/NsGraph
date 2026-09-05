@@ -60,6 +60,18 @@ export interface SellerSales {
   revenue: number;
 }
 
+export interface PdvSales {
+  id: number;
+  name: string;
+  revenue: number;
+  count: number;
+}
+
+export interface PaymentSales {
+  name: string;
+  revenue: number;
+}
+
 export interface RevenuePoint {
   key: string;
   label: string;
@@ -73,6 +85,8 @@ export interface DashboardData {
   topProducts: TopProduct[];
   categorySales: CategorySales[];
   sellerSales: SellerSales[];
+  pdvSales: PdvSales[];
+  paymentSales: PaymentSales[];
 }
 
 // ------ Helpers ------
@@ -247,6 +261,12 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
       // Build seller sales
       const sellerSales = buildSellerSales(currentDocs, funcionarios);
 
+      // Build PDV sales
+      const pdvSales = buildPdvSales(currentDocs);
+
+      // Build payment method sales
+      const paymentSales = buildPaymentSales(currentDocs);
+
       if (abortRef.current) return;
 
       setData({
@@ -255,6 +275,8 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
         topProducts,
         categorySales,
         sellerSales,
+        pdvSales,
+        paymentSales,
       });
     } catch (err) {
       if (!abortRef.current) {
@@ -546,6 +568,61 @@ function buildSellerSales(
       name: funcMap.get(id) || `Vendedor #${id}`,
       revenue,
     }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+}
+
+function buildPdvSales(docs: DocumentoResponse[]): PdvSales[] {
+  const pdvMap = new Map<number, { revenue: number; count: number }>();
+
+  for (const doc of docs) {
+    // idCaixa comes from the raw document response
+    const rawDoc = doc as any;
+    const idCaixa = rawDoc.idCaixa || 0;
+    if (idCaixa === 0) continue;
+
+    const existing = pdvMap.get(idCaixa);
+    if (existing) {
+      existing.revenue += doc.valTotal || 0;
+      existing.count += 1;
+    } else {
+      pdvMap.set(idCaixa, { revenue: doc.valTotal || 0, count: 1 });
+    }
+  }
+
+  return Array.from(pdvMap.entries())
+    .map(([id, data]) => ({
+      id,
+      name: `Caixa ${id}`,
+      revenue: data.revenue,
+      count: data.count,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+}
+
+function buildPaymentSales(docs: DocumentoResponse[]): PaymentSales[] {
+  const paymentMap = new Map<string, number>();
+
+  for (const doc of docs) {
+    // pagamentosLista comes from the raw document response
+    const rawDoc = doc as any;
+    const pagamentos = rawDoc.pagamentosLista;
+    if (!pagamentos || !Array.isArray(pagamentos)) continue;
+
+    for (const pag of pagamentos) {
+      const pagModel = pag.documentoPagamento;
+      if (!pagModel) continue;
+
+      const descricao = pagModel.descricao || "Não informado";
+      const valor = pagModel.valor || 0;
+
+      paymentMap.set(descricao, (paymentMap.get(descricao) || 0) + valor);
+    }
+  }
+
+  return Array.from(paymentMap.entries())
+    .map(([name, revenue]) => ({ name, revenue }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 }

@@ -1,6 +1,7 @@
 export interface AppConfig {
   apiToken: string;
   apiBaseUrl: string;
+  showOrders: boolean;
   showConversionRate: boolean;
   modelos: string[];
 }
@@ -12,7 +13,8 @@ const DEFAULT_CONFIG: AppConfig = {
   apiBaseUrl:
     import.meta.env.VITE_API_BASE_URL ||
     "https://api.meuerponline.com.br/publica",
-  showConversionRate: true,
+  showOrders: true,
+  showConversionRate: false,
   modelos: ["65", "55", "59", "PV"],
 };
 
