@@ -73,21 +73,11 @@ export function DashboardHeader({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-6 animate-fade-in border-b border-border mb-6">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 3v18h18" />
-              <path d="m19 9-5 5-4-4-3 3" />
-            </svg>
-          </div>
+          <img 
+            src="/logo.jpg" 
+            alt="Next Soluções" 
+            className="h-10 w-auto rounded-lg object-contain"
+          />
           <h1 className="text-2xl font-bold tracking-tight">Painel de Vendas</h1>
         </div>
         <div>

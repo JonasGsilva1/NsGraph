@@ -61,13 +61,22 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md shadow-lg border-primary/10">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-center">
-            Bem-vindo de volta
-          </CardTitle>
-          <CardDescription className="text-center">
-            Entre com suas credenciais para acessar o dashboard
-          </CardDescription>
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src="/logo.jpg" 
+              alt="Next Soluções" 
+              className="h-16 w-auto rounded-xl object-contain"
+            />
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">
+              Bem-vindo de volta
+            </CardTitle>
+            <CardDescription className="text-center">
+              Entre com suas credenciais para acessar o dashboard
+            </CardDescription>
+          </div>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
