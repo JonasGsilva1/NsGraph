@@ -59,29 +59,40 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md shadow-lg border-primary/10">
-        <CardHeader className="space-y-4">
-          <div className="flex justify-center">
-            <img 
-              src="/logo_final.png" 
-              alt="Next Soluções" 
-              className="h-16 w-auto rounded-xl object-contain"
-            />
+    <div className="flex min-h-screen items-center justify-center bg-[#0B0F1A] p-4 relative overflow-hidden">
+      {/* Subtle ambient glow behind the card */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#00C98B]/5 blur-[120px] rounded-full pointer-events-none" />
+      
+      <Card className="w-full max-w-[440px] bg-[#0F1522] border-[#1F2937] shadow-2xl relative z-10 sm:p-4">
+        <CardHeader className="space-y-8 pt-8 pb-4">
+          {/* Custom NeXT Logo */}
+          <div className="flex flex-col items-center justify-center select-none">
+            <div className="flex items-center gap-1.5">
+              <div className="flex text-[#00C98B] font-black text-5xl tracking-tighter" style={{ textShadow: '0 0 20px rgba(0, 201, 139, 0.3)' }}>
+                <span>&gt;</span>
+                <span className="-ml-2.5">&gt;</span>
+              </div>
+              <span className="text-white font-extrabold text-5xl tracking-tight">NeXT</span>
+            </div>
+            <span className="text-[#00C98B] font-bold text-[0.7rem] tracking-[0.4em] uppercase ml-12 opacity-90">
+              Soluções
+            </span>
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">
+
+          <div className="space-y-2 text-center">
+            <CardTitle className="text-2xl font-bold tracking-tight text-[#F8FAFC]">
               Bem-vindo de volta
             </CardTitle>
-            <CardDescription className="text-center">
+            <CardDescription className="text-[#8FA3BF] text-sm">
               Entre com suas credenciais para acessar o dashboard
             </CardDescription>
           </div>
         </CardHeader>
+
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 pb-6">
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email" className="text-[#F8FAFC] font-medium text-sm">E-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -89,23 +100,30 @@ function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-[#0B0F1A] border-[#1F2937] text-white placeholder:text-[#8FA3BF]/50 hover:border-[#374151] focus:border-[#00C98B] focus:ring-1 focus:ring-[#00C98B]/50 transition-all h-11"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" className="text-[#F8FAFC] font-medium text-sm">Senha</Label>
               </div>
               <Input
                 id="password"
                 type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="bg-[#0B0F1A] border-[#1F2937] text-white placeholder:text-[#8FA3BF]/50 hover:border-[#374151] focus:border-[#00C98B] focus:ring-1 focus:ring-[#00C98B]/50 transition-all h-11"
               />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button className="w-full" type="submit" disabled={isLoading}>
+          <CardFooter className="pb-8">
+            <Button 
+              className="w-full bg-[#00C98B] hover:bg-[#00AFA0] text-[#0B0F1A] font-semibold h-12 text-base transition-all shadow-[0_0_15px_rgba(0,201,139,0.2)] hover:shadow-[0_0_25px_rgba(0,201,139,0.3)]" 
+              type="submit" 
+              disabled={isLoading}
+            >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </CardFooter>
