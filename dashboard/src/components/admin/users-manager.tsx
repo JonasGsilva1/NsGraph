@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createClient } from '@supabase/supabase-js';
 
@@ -32,13 +33,24 @@ export function UsersManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  // New user state
+  // Create user dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserCompany, setNewUserCompany] = useState('none');
+
+  // Edit user dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('user');
+  const [editCompany, setEditCompany] = useState('none');
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -137,6 +149,61 @@ export function UsersManager() {
     }
   };
 
+  const openEditDialog = (user: UserProfile) => {
+    setEditingUser(user);
+    setEditName(user.full_name || '');
+    setEditRole(user.role || 'user');
+    setEditCompany(user.company_id || 'none');
+    setEditDialogOpen(true);
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSubmitting(true);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: editName,
+        role: editRole,
+        company_id: editCompany === 'none' ? null : editCompany,
+      })
+      .eq('id', editingUser.id);
+
+    if (error) {
+      toast.error('Erro ao atualizar usuário: ' + error.message);
+    } else {
+      toast.success('Usuário atualizado com sucesso!');
+    }
+
+    setIsSubmitting(false);
+    setEditDialogOpen(false);
+    setEditingUser(null);
+    fetchData();
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+
+    // Delete profile (the auth user won't be deleted, but the profile will be removed)
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', deleteTarget.id);
+
+    if (error) {
+      toast.error('Erro ao excluir usuário: ' + error.message);
+    } else {
+      toast.success(`Usuário "${deleteTarget.full_name || deleteTarget.id}" excluído com sucesso.`);
+    }
+
+    setIsDeleting(false);
+    setDeleteTarget(null);
+    fetchData();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -224,6 +291,88 @@ export function UsersManager() {
         </Dialog>
       </div>
 
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) setEditingUser(null); setEditDialogOpen(open); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Altere o nome, nível de acesso ou empresa vinculada do usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditUser}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input 
+                  id="edit-name" 
+                  placeholder="Ex: João da Silva" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nível de Acesso</Label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">Usuário Comum</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Empresa Vinculada</Label>
+                <Select value={editCompany} onValueChange={setEditCompany}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    {companies.map(company => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário "{deleteTarget?.full_name || 'Sem nome'}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O perfil deste usuário será removido. Ele não poderá mais acessar o painel até que um novo perfil seja criado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Excluindo...' : 'Sim, excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {isLoading ? (
         <div className="text-center py-10">Carregando usuários...</div>
       ) : users.length === 0 ? (
@@ -242,6 +391,7 @@ export function UsersManager() {
                 <th className="px-6 py-4 font-medium">Nome / E-mail</th>
                 <th className="px-6 py-4 font-medium">Nível de Acesso</th>
                 <th className="px-6 py-4 font-medium">Empresa Vinculada</th>
+                <th className="px-6 py-4 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -283,6 +433,28 @@ export function UsersManager() {
                           </SelectContent>
                         </Select>
                       )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => openEditDialog(user)}
+                        title="Editar usuário"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeleteTarget(user)}
+                        title="Excluir usuário"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

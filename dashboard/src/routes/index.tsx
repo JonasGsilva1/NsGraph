@@ -77,7 +77,7 @@ function Dashboard() {
       : getPresetRange(search.preset as Preset);
 
   // We pass selectedCompanyId to our edge function proxy hook
-  const { data, loading: dataLoading, error } = useDashboardData(range, selectedCompanyId);
+  const { data, loading: dataLoading, error, isSyncing } = useDashboardData(range, selectedCompanyId);
   
   const loading = loadingCompanies || dataLoading;
 
@@ -155,6 +155,13 @@ function Dashboard() {
 
           {loading && !data && (
             <div className="flex flex-col gap-6 animate-fade-in-delay-1">
+              {isSyncing && (
+                <div className="bg-primary/10 border border-primary/20 text-primary p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <h3 className="font-medium">Sincronizando dados iniciais da empresa...</h3>
+                  <p className="text-sm opacity-80">Isso pode levar alguns minutos. O painel será atualizado automaticamente.</p>
+                </div>
+              )}
               <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>
               <div className="dashboard-grid">
                 <div className="h-[400px] bg-card/50 rounded-xl skeleton"></div>

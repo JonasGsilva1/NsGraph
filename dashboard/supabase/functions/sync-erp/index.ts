@@ -147,9 +147,35 @@ serve(async (req) => {
     try {
       requestBody = await req.json()
     } catch { /* no body is fine */ }
+
+    // Support admin actions
+    const action = requestBody?.action || 'sync'
+    
+    if (action === 'reset-sync') {
+      const companyId = requestBody?.companyId
+      if (companyId) {
+        await supabaseAdmin.from('sync_status').update({ is_syncing: false, sync_error: null }).eq('company_id', companyId)
+      } else {
+        await supabaseAdmin.from('sync_status').update({ is_syncing: false, sync_error: null }).eq('is_syncing', true)
+      }
+      return new Response(JSON.stringify({ success: true, action: 'reset-sync' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    if (action === 'status') {
+      const { data, error: statusError } = await supabaseAdmin.from('sync_status').select('*')
+      return new Response(JSON.stringify({ data, error: statusError }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
     
     const specificCompanyId = requestBody?.companyId || null
     const forceFullSync = requestBody?.fullSync === true
+    const TIMEOUT_MS = 120_000 // 120s safety timeout (edge functions cap at ~150s)
+    const startTime = Date.now()
 
     // Fetch companies to sync
     let companiesQuery = supabaseAdmin.from('companies').select('id, api_token')
@@ -297,7 +323,8 @@ serve(async (req) => {
                 synced_at: new Date().toISOString(),
               })
             }
-            await sleep(300)
+            if (Date.now() - startTime > TIMEOUT_MS) break
+            await sleep(200)
           }
 
           if (rows.length > 0) {
@@ -339,7 +366,8 @@ serve(async (req) => {
                 synced_at: new Date().toISOString(),
               })
             }
-            await sleep(300)
+            if (Date.now() - startTime > TIMEOUT_MS) break
+            await sleep(200)
           }
 
           if (rows.length > 0) {

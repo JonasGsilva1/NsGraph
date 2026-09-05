@@ -117,6 +117,7 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [source, setSource] = useState<"cache" | "live" | null>(null);
   const abortRef = useRef(false);
 
@@ -133,10 +134,14 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
       return;
     }
 
-    const useCache = isWithinCacheWindow(range);
-    setSource(useCache ? "cache" : "live");
-
     try {
+      // Check sync status
+      const syncStatus = await fetchSyncStatus(companyId);
+      setIsSyncing(!!syncStatus?.is_syncing);
+
+      const useCache = isWithinCacheWindow(range);
+      setSource(useCache ? "cache" : "live");
+
       const fromStr = dateToISO(range.from);
       const toStr = dateToISO(range.to);
       const prevRange = getPreviousPeriod(range);
@@ -298,7 +303,7 @@ export function useDashboardData(range: DateRange, companyId?: string | null) {
     };
   }, [load]);
 
-  return { data, loading, error, source, reload: load };
+  return { data, loading, error, isSyncing, source, reload: load };
 }
 
 // ------ Builders ------
