@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+import { Logo } from '@/components/ui/logo';
+
 export const Route = createFileRoute('/login')({
   component: LoginPage,
 });
@@ -65,18 +67,8 @@ function LoginPage() {
       
       <Card className="w-full max-w-[440px] bg-[#0F1522] border-[#1F2937] shadow-2xl relative z-10 sm:p-4">
         <CardHeader className="space-y-8 pt-8 pb-4">
-          {/* Custom NeXT Logo */}
-          <div className="flex flex-col items-center justify-center select-none">
-            <div className="flex items-center gap-1.5">
-              <div className="flex text-[#00C98B] font-black text-5xl tracking-tighter" style={{ textShadow: '0 0 20px rgba(0, 201, 139, 0.3)' }}>
-                <span>&gt;</span>
-                <span className="-ml-2.5">&gt;</span>
-              </div>
-              <span className="text-white font-extrabold text-5xl tracking-tight">NeXT</span>
-            </div>
-            <span className="text-[#00C98B] font-bold text-[0.7rem] tracking-[0.4em] uppercase ml-12 opacity-90">
-              Soluções
-            </span>
+          <div className="flex justify-center mb-2">
+            <Logo />
           </div>
 
           <div className="space-y-2 text-center">

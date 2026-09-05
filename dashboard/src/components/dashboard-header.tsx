@@ -17,7 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
 import { type DateRange, formatDateRange, type Preset } from "@/lib/date-utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Logo } from '@/components/ui/logo';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SettingsDialog } from "./settings-dialog";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -70,31 +77,37 @@ export function DashboardHeader({
   };
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-6 animate-fade-in border-b border-border mb-6">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <img 
-            src="/logo_final.png" 
-            alt="Next Soluções" 
-            className="h-10 w-auto rounded-lg object-contain"
-          />
-          <h1 className="text-2xl font-bold tracking-tight">Painel de Vendas</h1>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground mt-1">
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between pb-6 animate-fade-in border-b border-border mb-6 gap-6">
+      {/* Esquerda: Logo */}
+      <div className="flex items-center">
+        <Logo collapsed={false} />
+      </div>
+
+      {/* Direita: Controles */}
+      <div className="flex flex-wrap items-center gap-4 lg:justify-end">
+        {/* Título e Período (Apenas Desktop) */}
+        <div className="hidden lg:flex flex-col items-end mr-2 text-right">
+          <h1 className="text-xl font-bold tracking-tight text-[#F8FAFC]">Painel de Vendas</h1>
+          <p className="text-sm text-[#94A3B8]">
             {formatDateRange(range)}
           </p>
         </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+        {/* Título e Período (Mobile) */}
+        <div className="flex lg:hidden flex-col w-full mb-2">
+          <h1 className="text-xl font-bold tracking-tight text-[#F8FAFC]">Painel de Vendas</h1>
+          <p className="text-sm text-[#94A3B8]">
+            {formatDateRange(range)}
+          </p>
+        </div>
+
         {isAdmin && (
-          <div className="flex items-center gap-2 mr-2">
+          <div className="flex items-center gap-2">
             <Select 
               value={selectedCompanyId || ''} 
               onValueChange={onCompanyChange}
             >
-              <SelectTrigger className="w-[250px] h-10 bg-card">
+              <SelectTrigger className="w-full lg:w-[250px] h-10 bg-card border-border">
                 <SelectValue placeholder="Selecione uma empresa">
                   {companies.find(c => c.id === selectedCompanyId)?.name || 'Carregando...'}
                 </SelectValue>
