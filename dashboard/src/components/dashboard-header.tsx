@@ -104,8 +104,10 @@ export function DashboardHeader({
               value={selectedCompanyId || ''} 
               onValueChange={onCompanyChange}
             >
-              <SelectTrigger className="w-[200px] h-10 bg-card">
-                <SelectValue placeholder="Selecione uma empresa" />
+              <SelectTrigger className="w-[250px] h-10 bg-card">
+                <SelectValue placeholder="Selecione uma empresa">
+                  {companies.find(c => c.id === selectedCompanyId)?.name || 'Carregando...'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {companies.map(c => (

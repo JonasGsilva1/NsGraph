@@ -215,6 +215,10 @@ serve(async (req) => {
 
         // --- Sync documentos ---
         let totalDocs = 0
+        const uniqueGrupos = new Set<number>()
+        const uniqueSellers = new Set<number>()
+        const debugErrors: string[] = []
+
         for (const modelo of MODELOS) {
           const docs = await erpGetAllPages('/api/documento/v1', company.api_token, {
             DataInicio: fromStr,
@@ -225,6 +229,17 @@ serve(async (req) => {
           })
 
           if (docs.length > 0) {
+            // Extract unique groups and sellers
+            for (const doc of docs) {
+              if (doc.mercadoriasLista) {
+                for (const item of doc.mercadoriasLista) {
+                  const m = item.documentoMercadoria
+                  if (m?.idGrupo) uniqueGrupos.add(m.idGrupo)
+                  if (m?.idPessoaFuncionario) uniqueSellers.add(m.idPessoaFuncionario)
+                }
+              }
+            }
+
             // Prepare rows for upsert
             const rows = docs.map((doc: any) => ({
               id: doc.codigo,
@@ -256,49 +271,85 @@ serve(async (req) => {
           }
         }
 
-        // --- Sync grupos (static, only on full sync) ---
+        // --- Sync grupos (Dynamic based on documents) ---
         let totalGrupos = 0
-        if (needsFullSync) {
-          const grupos = await erpGetAllPages('/api/mercadoria-grupo/v1', company.api_token)
-          if (grupos.length > 0) {
-            const rows = grupos.map((g: any) => ({
-              id: g.codigo ?? g.idGrupo ?? 0,
-              company_id: company.id,
-              descricao: g.descricao,
-              synced_at: new Date().toISOString(),
-            }))
+        if (uniqueGrupos.size > 0) {
+          const rows = []
+          for (const idGrupo of uniqueGrupos) {
+            try {
+              const g = await erpGet(`/api/mercadoria-grupo/v1/${idGrupo}`, company.api_token)
+              if (g) {
+                rows.push({
+                  id: g.codigo ?? g.idGrupo ?? idGrupo,
+                  company_id: company.id,
+                  descricao: g.descricao || `Grupo #${idGrupo}`,
+                  synced_at: new Date().toISOString(),
+                })
+              }
+            } catch (err: any) {
+              const msg = `Group ${idGrupo}: ${err.message}`
+              console.error(`[sync-erp] Error fetching group ${idGrupo}:`, err.message)
+              debugErrors.push(msg)
+              rows.push({
+                id: idGrupo,
+                company_id: company.id,
+                descricao: `Grupo #${idGrupo}`,
+                synced_at: new Date().toISOString(),
+              })
+            }
+            await sleep(300)
+          }
 
+          if (rows.length > 0) {
             const { error: upsertError } = await supabaseAdmin
               .from('erp_grupos')
               .upsert(rows, { onConflict: 'id,company_id' })
-
             if (upsertError) {
               console.error(`[sync-erp] Upsert error (grupos): ${upsertError.message}`)
             }
-            totalGrupos = grupos.length
+            totalGrupos = rows.length
           }
         }
 
-        // --- Sync funcionários (static, only on full sync) ---
+        // --- Sync funcionários (Dynamic based on documents) ---
         let totalFuncionarios = 0
-        if (needsFullSync) {
-          const funcionarios = await erpGetAllPages('/api/funcionario/v1', company.api_token)
-          if (funcionarios.length > 0) {
-            const rows = funcionarios.map((f: any) => ({
-              id: f.idPessoaFuncionario ?? f.codigo ?? 0,
-              company_id: company.id,
-              nome: f.nome,
-              synced_at: new Date().toISOString(),
-            }))
+        if (uniqueSellers.size > 0) {
+          const rows = []
+          for (const idSeller of uniqueSellers) {
+            try {
+              // Fetch directly from pessoa as idPessoaFuncionario is a pessoa ID
+              // Note: GET endpoint is /api/pessoa/{id} without v1
+              const pessoa = await erpGet(`/api/pessoa/${idSeller}`, company.api_token)
+              if (pessoa) {
+                rows.push({
+                  id: idSeller,
+                  company_id: company.id,
+                  nome: pessoa.fantasia || pessoa.razaoSocial || pessoa.nome || `Vendedor #${idSeller}`,
+                  synced_at: new Date().toISOString(),
+                })
+              }
+            } catch (err: any) {
+              const msg = `Seller ${idSeller}: ${err.message}`
+              console.error(`[sync-erp] Error fetching seller ${idSeller}:`, err.message)
+              debugErrors.push(msg)
+              rows.push({
+                id: idSeller,
+                company_id: company.id,
+                nome: `Vendedor #${idSeller}`,
+                synced_at: new Date().toISOString(),
+              })
+            }
+            await sleep(300)
+          }
 
+          if (rows.length > 0) {
             const { error: upsertError } = await supabaseAdmin
               .from('erp_funcionarios')
               .upsert(rows, { onConflict: 'id,company_id' })
-
             if (upsertError) {
               console.error(`[sync-erp] Upsert error (funcionarios): ${upsertError.message}`)
             }
-            totalFuncionarios = funcionarios.length
+            totalFuncionarios = rows.length
           }
         }
 
@@ -318,6 +369,7 @@ serve(async (req) => {
           docs: totalDocs,
           grupos: totalGrupos,
           funcionarios: totalFuncionarios,
+          debugErrors
         })
 
       } catch (syncErr: any) {
