@@ -57,17 +57,31 @@ export function Logo({ className = '', collapsed = false }: LogoProps) {
         <div className="flex items-center text-[#F8FAFC] font-bold text-[52px] tracking-tight leading-none font-sans" style={{ letterSpacing: '-0.04em' }}>
           <span>Ne</span>
           
-          {/* Custom 'x' split exactly in half: left side white, right side teal */}
-          <span 
-            className="text-transparent bg-clip-text"
-            style={{ 
-              backgroundImage: 'linear-gradient(to right, #F8FAFC 50%, #00F5B0 50%, #00AFA0 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text'
-            }}
-          >
-            x
-          </span>
+          {/* Custom 'x' formed by a teal '>' and a white '<' */}
+          <svg viewBox="0 0 100 100" className="w-[0.9em] h-[0.9em] mx-[0.02em] mt-[0.05em] overflow-visible" fill="none">
+            <defs>
+              <linearGradient id="teal-x-left" x1="0" y1="50" x2="45" y2="50" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#00AFA0" />
+                <stop offset="1" stopColor="#00F5B0" />
+              </linearGradient>
+            </defs>
+            {/* Teal '>' part (Left) */}
+            <path 
+              d="M 5 25 L 25 25 L 45 50 L 25 75 L 5 75 L 25 50 Z" 
+              fill="url(#teal-x-left)" 
+              stroke="url(#teal-x-left)" 
+              strokeWidth="4" 
+              strokeLinejoin="round" 
+            />
+            {/* White '<' part (Right) */}
+            <path 
+              d="M 75 25 L 95 25 L 75 50 L 95 75 L 75 75 L 55 50 Z" 
+              fill="#F8FAFC" 
+              stroke="#F8FAFC" 
+              strokeWidth="4" 
+              strokeLinejoin="round" 
+            />
+          </svg>
           
           <span>t</span>
         </div>
