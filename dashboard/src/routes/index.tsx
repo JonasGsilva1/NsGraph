@@ -19,7 +19,7 @@ import { useDashboardData } from "@/lib/api-hooks";
 import { getPresetRange, type Preset } from "@/lib/date-utils";
 import { getConfig } from "@/lib/config";
 
-export const Route = createFileRoute("/")({\
+export const Route = createFileRoute("/")({
   component: Dashboard,
   validateSearch: (search: Record<string, unknown>) => {
     return {
