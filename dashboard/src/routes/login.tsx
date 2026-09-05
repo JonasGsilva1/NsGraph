@@ -64,7 +64,7 @@ function LoginPage() {
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
             <img 
-              src="/logo.jpg" 
+              src="/logo_final.png" 
               alt="Next Soluções" 
               className="h-16 w-auto rounded-xl object-contain"
             />
