@@ -8,48 +8,68 @@ interface LogoProps {
 export function Logo({ className = '', collapsed = false }: LogoProps) {
   return (
     <div className={`flex items-center gap-3 select-none ${className}`}>
-      {/* Symbol: 3 overlapping triangles pointing right */}
-      <div className="relative flex-shrink-0 flex items-center justify-center w-11 h-11">
-        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-md">
-          {/* Triangle 1 (Back/Left) - Blue/Teal mix */}
-          <path d="M6 10 L26 24 L6 38 Z" fill="url(#grad1)" opacity="0.6" />
-          
-          {/* Triangle 2 (Middle) */}
-          <path d="M14 10 L34 24 L14 38 Z" fill="url(#grad2)" opacity="0.85" />
-          
-          {/* Triangle 3 (Front/Right) - Solid Teal */}
-          <path d="M22 10 L42 24 L22 38 Z" fill="url(#grad3)" />
-          
+      {/* Symbol: 3 rounded overlapping triangles */}
+      <div className="relative flex-shrink-0 flex items-center justify-center w-14 h-14 -ml-2">
+        <svg viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id="grad1" x1="6" y1="10" x2="26" y2="38" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#3B82F6" /> {/* Blue */}
-              <stop offset="1" stopColor="#00C98B" /> {/* Teal */}
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            
+            {/* Left Triangle - Dark/transparent teal */}
+            <linearGradient id="tri1" x1="15" y1="20" x2="55" y2="80">
+              <stop stopColor="#006A75" stopOpacity="0.4" />
+              <stop offset="1" stopColor="#004050" stopOpacity="0.6" />
             </linearGradient>
-            <linearGradient id="grad2" x1="14" y1="10" x2="34" y2="38" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#00C98B" />
-              <stop offset="1" stopColor="#00AFA0" />
+
+            {/* Middle Triangle - Medium teal */}
+            <linearGradient id="tri2" x1="35" y1="20" x2="75" y2="80">
+              <stop stopColor="#00B090" stopOpacity="0.8" />
+              <stop offset="1" stopColor="#007A80" stopOpacity="0.9" />
             </linearGradient>
-            <linearGradient id="grad3" x1="22" y1="10" x2="42" y2="38" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#00E5FF" />
-              <stop offset="1" stopColor="#00C98B" />
+
+            {/* Right Triangle - Bright neon teal */}
+            <linearGradient id="tri3" x1="55" y1="20" x2="95" y2="80">
+              <stop stopColor="#00F5B0" />
+              <stop offset="1" stopColor="#00B090" />
+            </linearGradient>
+
+            <linearGradient id="teal-x" x1="52" y1="25" x2="85" y2="75">
+              <stop stopColor="#00F5B0" />
+              <stop offset="1" stopColor="#008080" />
             </linearGradient>
           </defs>
+
+          {/* Triangle 1 */}
+          <path d="M 20 20 L 55 50 L 20 80 Z" fill="url(#tri1)" stroke="url(#tri1)" strokeWidth="10" strokeLinejoin="round" />
+          
+          {/* Triangle 2 */}
+          <path d="M 40 20 L 75 50 L 40 80 Z" fill="url(#tri2)" stroke="url(#tri2)" strokeWidth="10" strokeLinejoin="round" />
+          
+          {/* Triangle 3 (with glow) */}
+          <path d="M 60 20 L 95 50 L 60 80 Z" fill="url(#tri3)" stroke="url(#tri3)" strokeWidth="10" strokeLinejoin="round" filter="url(#glow)" />
         </svg>
       </div>
 
       {/* Wordmark */}
       <div className={`flex flex-col justify-center ${collapsed ? 'hidden sm:flex' : 'flex'}`}>
-        <div className="text-[#F8FAFC] font-extrabold text-[28px] tracking-tight leading-none flex items-baseline">
+        <div className="flex items-center text-[#F8FAFC] font-bold text-[52px] tracking-tight leading-none font-sans" style={{ letterSpacing: '-0.04em' }}>
           <span>Ne</span>
-          <span className="text-white relative">
-            X
-            {/* Subtle teal accent on the X */}
-            <span className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[#00C98B] rounded-full opacity-0"></span>
-          </span>
+          
+          {/* Custom 'x' with white left side and teal right side */}
+          <svg viewBox="0 0 100 100" className="w-[0.8em] h-[0.8em] mx-[-0.05em] mt-[0.05em]" fill="none">
+            {/* White '<' part */}
+            <path d="M 12 25 L 34 25 L 48 50 L 34 75 L 12 75 L 26 50 Z" fill="white" />
+            {/* Teal '>' part */}
+            <path d="M 88 25 L 66 25 L 52 50 L 66 75 L 88 75 L 74 50 Z" fill="url(#teal-x)" />
+          </svg>
+          
           <span>t</span>
         </div>
-        <span className="text-[#00C98B] font-bold text-[0.65rem] tracking-[0.4em] uppercase mt-1 pl-0.5 opacity-90">
-          Soluções
+        
+        <span className="text-[#94A3B8] font-normal text-[11px] tracking-[0.55em] lowercase mt-0.5 self-end pr-1 opacity-80">
+          soluções
         </span>
       </div>
     </div>
