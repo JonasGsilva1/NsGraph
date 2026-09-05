@@ -57,18 +57,22 @@ export function Logo({ className = '', collapsed = false }: LogoProps) {
         <div className="flex items-center text-[#F8FAFC] font-bold text-[52px] tracking-tight leading-none font-sans" style={{ letterSpacing: '-0.04em' }}>
           <span>Ne</span>
           
-          {/* Custom 'x' with white left side and teal right side */}
-          <svg viewBox="0 0 100 100" className="w-[0.8em] h-[0.8em] mx-[-0.05em] mt-[0.05em]" fill="none">
-            {/* White '<' part */}
-            <path d="M 12 25 L 34 25 L 48 50 L 34 75 L 12 75 L 26 50 Z" fill="white" />
-            {/* Teal '>' part */}
-            <path d="M 88 25 L 66 25 L 52 50 L 66 75 L 88 75 L 74 50 Z" fill="url(#teal-x)" />
-          </svg>
+          {/* Custom 'x' split exactly in half: left side white, right side teal */}
+          <span 
+            className="text-transparent bg-clip-text"
+            style={{ 
+              backgroundImage: 'linear-gradient(to right, #F8FAFC 50%, #00F5B0 50%, #00AFA0 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text'
+            }}
+          >
+            x
+          </span>
           
           <span>t</span>
         </div>
         
-        <span className="text-[#94A3B8] font-normal text-[11px] tracking-[0.55em] lowercase mt-0.5 self-end pr-1 opacity-80">
+        <span className="text-[#94A3B8] font-normal text-[11px] tracking-[0.55em] lowercase mt-0.5 text-right pr-1 opacity-80">
           soluções
         </span>
       </div>
